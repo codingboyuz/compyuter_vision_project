@@ -17,7 +17,7 @@ def media_pipe():
     drawing_spec = mp_drawing.DrawingSpec(thickness=1, circle_radius=1)
 
     # Kamera ochish (0 – kompyuterning webcam, yoki IP kamera manzili)
-    cap = cv2.VideoCapture('video/1.mp4')
+    cap = cv2.VideoCapture('../../video/1.mp4')
 
     while cap.isOpened():
         success, image = cap.read()

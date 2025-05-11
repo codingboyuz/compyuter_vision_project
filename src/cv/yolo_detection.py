@@ -6,14 +6,14 @@ from ultralytics import YOLO
 
 def yolo_detection():
     # YOLOv10 modelini yuklash
-    model = YOLO("yolov10n.pt")
+    model = YOLO("../../yolov10n.pt")
 
     # Ma'lum insonning yuz encodingini yuklash
-    known_image = face_recognition.load_image_file("known_faces/1.png")
+    known_image = face_recognition.load_image_file("../../known_faces/1.png")
     known_encoding = face_recognition.face_encodings(known_image)[0]
 
     # Video ochish (kamera yoki video fayl)
-    cap = cv2.VideoCapture('video/1.mp4')
+    cap = cv2.VideoCapture('../../video/1.mp4')
 
     # FPS cheklash uchun vaqt belgilash
     fps_limit = 10

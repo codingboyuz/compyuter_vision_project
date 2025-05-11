@@ -3,11 +3,11 @@ import cv2
 
 def deep_face_detection():
     # Ma'lum insonning suratini yuklaymiz
-    target_img_path = "known_faces/1.png"
+    target_img_path = "../../known_faces/1.png"
     target_img = cv2.imread(target_img_path)
 
     # Kameradan oqim ochamiz
-    cap = cv2.VideoCapture('video/1.mp4')
+    cap = cv2.VideoCapture('../../video/1.mp4')
 
     while True:
         ret, frame = cap.read()
