@@ -1,20 +1,29 @@
-import threading
-from  src.view.user_add_view import UserAddView
-import  flet as ft
+import flet as ft
 
-
+from src.views.app_bar_view import AppBarView
+from src.views.user_add_view import UserAddView
 
 
 def main(page: ft.Page):
-    page.title = "Add"  # Oyna sarlavhasi
-    user_add_view = UserAddView()
-    page.add(user_add_view.view())  # Ekranga qo‘shish
+    page.title = "Foydalanuvchi qo‘shish dialogi"
+    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 
-    # Kamera oqimini fon jarayonda ishga tushurish
-    # threading.Thread(target=stream_video, args=(img,), daemon=True).start()
+    app_bar_view = AppBarView(page=page)
 
-# Flet ilovasini ishga tushurish
+    file_picker = ft.FilePicker()
+    page.overlay.append(file_picker)
+    page.update()
 
-if __name__ == '__main__':
+    file_picker = ft.FilePicker()
+    page.overlay.append(file_picker)
+    page.update()
 
-    ft.app(target=main)
+    page.add(
+        app_bar_view.view(),
+        ft.ElevatedButton("Choose files...",
+                          on_click=lambda _: file_picker.pick_files(allow_multiple=True))
+
+    )
+
+ft.app(target=main)
+

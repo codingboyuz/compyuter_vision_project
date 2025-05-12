@@ -219,3 +219,106 @@ Agar lokal tizimda barcha kameralarni kuzatish qiyin bo‘lsa:
 * **Cloud yechimlari**: Yangi tizimda ko‘p kameralar uchun yuklamani taqsimlash va tarmoqni optimallashtirish uchun **cloud** yoki **distributed computing** yechimlarini ishlatish mumkin.
 
 Agar yanada aniqroq ko‘rsatmalar yoki texnik yordam kerak bo‘lsa, men yordam berishga tayyorman!
+
+
+
+---
+
+# Ui qo'lanma rout
+Agar sizda bir nechta UI komponentlari (masalan: UserAddView, UserListView, SettingsView, va hokazo) bo‘lsa, ularni sahifaga qo‘shishning bir nechta varianti bor. Quyida har bir yondashuvni tushuntiraman:
+
+---
+
+### 🟢 1. Barchasini bir vaqtning o‘zida sahifaga qo‘shish
+
+Agar barcha UI'lar bir sahifada ko‘rinishini istasangiz:
+
+```python
+from src.view.user_add_view import UserAddView
+from src.view.user_list_view import UserListView
+from src.view.settings_view import SettingsView
+import flet as ft
+
+def main(page: ft.Page):
+    page.title = "Main Page"
+
+    user_add = UserAddView()
+    user_list = UserListView()
+    settings = SettingsView()
+
+    page.add(
+        user_add.view(),
+        user_list.view(),
+        settings.view(),
+    )
+
+ft.app(target=main)
+```
+
+---
+
+### 🔁 2. Faqat bittasini ko‘rsatib, boshqalarini sahifalar (routes) orqali boshqarish
+
+Agar siz `"/add"`, `"/list"`, `"/settings"` kabi yo‘llar (routing) orqali UI'larni boshqarmoqchi bo‘lsangiz:
+
+```python
+def main(page: ft.Page):
+    page.title = "Main App"
+
+    def route_change(route):
+        page.views.clear()
+
+        if page.route == "/add":
+            page.views.append(ft.View("/add", controls=[UserAddView().view()]))
+
+        elif page.route == "/list":
+            page.views.append(ft.View("/list", controls=[UserListView().view()]))
+
+        elif page.route == "/settings":
+            page.views.append(ft.View("/settings", controls=[SettingsView().view()]))
+
+        page.update()
+
+    page.on_route_change = route_change
+    page.go("/add")  # Boshlang‘ich sahifa
+
+ft.app(target=main)
+```
+
+---
+
+### 📌 3. UI'larni `Tabs`, `NavigationRail`, yoki `Drawer` orqali almashtirish
+
+Agar sahifalar o‘rtasida `Tab` yoki `Drawer` menyu bilan almashmoqchi bo‘lsangiz, masalan:
+
+```python
+def main(page: ft.Page):
+    def on_change(e):
+        index = e.control.selected_index
+        if index == 0:
+            content.content = UserAddView().view()
+        elif index == 1:
+            content.content = UserListView().view()
+        elif index == 2:
+            content.content = SettingsView().view()
+        page.update()
+
+    tabs = ft.Tabs(
+        selected_index=0,
+        on_change=on_change,
+        tabs=[
+            ft.Tab(text="Add User"),
+            ft.Tab(text="User List"),
+            ft.Tab(text="Settings"),
+        ],
+    )
+
+    content = ft.Container(content=UserAddView().view())
+    page.add(tabs, content)
+
+ft.app(target=main)
+```
+
+---
+
+💬 Qaysi uslub sizga mos? Har birini amaliy tarzda yozib berishim mumkin. Routingmi yoki `Tabs`mi ishlatmoqchisiz?
