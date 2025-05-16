@@ -1,10 +1,10 @@
 import cv2
 import mediapipe as mp
 
+from src.cv.cam_onvif import get_rtsp_url
 
 
-
-def media_pipe():
+def media_pipe(rtsp_url):
     # Face Mesh moduli
     mp_face_mesh = mp.solutions.face_mesh
     face_mesh = mp_face_mesh.FaceMesh(static_image_mode=False,
@@ -17,7 +17,7 @@ def media_pipe():
     drawing_spec = mp_drawing.DrawingSpec(thickness=1, circle_radius=1)
 
     # Kamera ochish (0 – kompyuterning webcam, yoki IP kamera manzili)
-    cap = cv2.VideoCapture('../../video/1.mp4')
+    cap = cv2.VideoCapture(rtsp_url)
 
     while cap.isOpened():
         success, image = cap.read()
@@ -63,6 +63,7 @@ def media_pipe():
                                 cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
 
         # Natijani ko‘rsatish
+        image = cv2.resize(image, (1920, 1080))
         cv2.imshow('MediaPipe Face Mesh', image)
 
         # Chiqarish uchun 'q'
@@ -74,4 +75,15 @@ def media_pipe():
 
 
 if __name__ == '__main__':
-    media_pipe()
+
+    ip = '192.168.1.136'
+    port = 80
+    username = 'admin'
+    password = '123456'
+
+    try:
+        rtsp_url = get_rtsp_url(ip, port, username, password)
+        print(f"🎥 RTSP URL: {rtsp_url}")
+        media_pipe(rtsp_url)
+    except Exception as e:
+        print(e)

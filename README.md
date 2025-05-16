@@ -116,7 +116,7 @@ def process_camera_stream(camera_url, model):
             break
 
         # DeepFace bilan yuzni tanib olish
-        result = DeepFace.verify(img1_path="known_faces/1.png", img2_path=frame, enforce_detection=False)
+        result = DeepFace.verify(img1_path="known_faces/Dmitriy.png", img2_path=frame, enforce_detection=False)
         label = "Izlanayotgan inson" if result["verified"] else "Boshqa inson"
         
         # Ekranda ko‘rsatish
@@ -322,3 +322,123 @@ ft.app(target=main)
 ---
 
 💬 Qaysi uslub sizga mos? Har birini amaliy tarzda yozib berishim mumkin. Routingmi yoki `Tabs`mi ishlatmoqchisiz?
+
+
+```python
+import cv2
+import face_recognition
+import threading
+import time
+import os
+
+
+class CameraDetection:
+    def __init__(self, source: str):
+        """
+        :param source: RTSP URL yoki video fayl yo'li
+        """
+        self.source = source
+        self.known_encodings = []
+        self.known_names = []
+        self.face_locations = []
+        self.face_names = []
+        self.lock = threading.Lock()
+        self.frame_counter = 0
+        self.process_this_frame = True  # Yuzni har 2-frame da bir marta aniqlash uchun flag
+        self.running = False
+
+    def load_known_faces(self, known_faces_dir: str):
+        """
+        Papkadan ma'lum yuzlarni yuklab olish
+        :param known_faces_dir: papka manzili
+        """
+        for filename in os.listdir(known_faces_dir):
+            filepath = os.path.join(known_faces_dir, filename)
+            image = face_recognition.load_image_file(filepath)
+            encodings = face_recognition.face_encodings(image)
+            if encodings:
+                self.known_encodings.append(encodings[0])
+                self.known_names.append(os.path.splitext(filename)[0])
+        print(f"{len(self.known_names)} ta ma'lum yuz yuklandi.")
+
+    def recognize_faces_in_frame(self, frame):
+        """
+        Yuzlarni aniqlash va nomlash uchun metod (thread ichida ishlaydi)
+        """
+        # Kichiklashtirish va RGB formatga o'tkazish
+        small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
+        rgb_small_frame = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
+
+        # Yuzlarni aniqlash
+        locations = face_recognition.face_locations(rgb_small_frame)
+        encodings = face_recognition.face_encodings(rgb_small_frame, locations)
+
+        names = []
+        for encoding in encodings:
+            matches = face_recognition.compare_faces(self.known_encodings, encoding, tolerance=0.5)
+            name = "Noma'lum"
+
+            face_distances = face_recognition.face_distance(self.known_encodings, encoding)
+            if len(face_distances) > 0:
+                best_match_index = face_distances.argmin()
+                if matches[best_match_index]:
+                    name = self.known_names[best_match_index]
+
+            names.append(name)
+
+        # Natijalarni lock bilan saqlash
+        with self.lock:
+            self.face_locations = [(top*4, right*4, bottom*4, left*4) for (top, right, bottom, left) in locations]
+            self.face_names = names
+
+    def start_detection(self):
+        """
+        Video oqimini ishga tushuradi va yuzlarni aniqlaydi
+        """
+        self.running = True
+        cap = cv2.VideoCapture(self.source)
+
+        if not cap.isOpened():
+            print("Video oqimi ochilmadi!")
+            return
+
+        while self.running:
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            self.frame_counter += 1
+
+            # Har 2-frame da bir marta yuzni aniqlash
+            if self.frame_counter % 2 == 0:
+                # Threadda aniqlash, shunda video oqimi to'xtamaydi
+                threading.Thread(target=self.recognize_faces_in_frame, args=(frame.copy(),), daemon=True).start()
+
+            # Chizish uchun oxirgi natijalarni olish
+            with self.lock:
+                for (top, right, bottom, left), name in zip(self.face_locations, self.face_names):
+                    color = (0, 255, 0) if name != "Noma'lum" else (0, 0, 255)
+                    cv2.rectangle(frame, (left, top), (right, bottom), color, 2)
+                    cv2.putText(frame, name, (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
+
+            # FPS ko'rsatish
+            cv2.putText(frame, f"Frame: {self.frame_counter}", (10, 30),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 0), 2)
+
+            cv2.imshow('Face Recognition', frame)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+        cap.release()
+        cv2.destroyAllWindows()
+
+    def stop(self):
+        self.running = False
+
+
+if __name__ == "__main__":
+    cam = CameraDetection(source='../../assets/vid.mp4')  # Bu yerga RTSP yoki video fayl yo'lini kiriting
+    cam.load_known_faces('../../assets/known_faces')
+    cam.start_detection()
+
+```
